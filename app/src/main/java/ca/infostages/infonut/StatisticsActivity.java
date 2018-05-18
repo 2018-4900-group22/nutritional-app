@@ -11,6 +11,7 @@ import android.view.View;
 import android.widget.Button;
 
 import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
@@ -98,6 +99,10 @@ public class StatisticsActivity extends AppCompatActivity {
 
         final HashMap<String, Double> hashmap = NutritionData.nutritionHashMap;
 
+        Legend legend = mChart.getLegend();
+        legend.setTextSize(12f);
+        legend.setTextColor(Color.WHITE);
+
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if(currentUser == null) {
             Intent intent = new Intent(StatisticsActivity.this, MainActivity.class);
@@ -133,15 +138,15 @@ public class StatisticsActivity extends AppCompatActivity {
 
         System.out.println("Selected Plan456: " + selected_plan);
 
-
-
-
         final boolean checkedServing = getIntent().getBooleanExtra("servingChecked", true);
         final double servingAmount = getIntent().getDoubleExtra("100Portion", 100);
         mChart.setUsePercentValues(true);
         mChart.getDescription().setEnabled(false);
 
         List<PieEntry> pieEntries = new ArrayList<>();
+
+        pieEntries.add(new PieEntry(95, "Intake"));
+        pieEntries.add(new PieEntry(5, "Test"));
 
         // The name of the chart
         PieDataSet dataSet = new PieDataSet(pieEntries, label);
@@ -495,12 +500,8 @@ public class StatisticsActivity extends AppCompatActivity {
         // The name of the chart
         PieDataSet dataSet = new PieDataSet(pieEntries, label);
 
-        // Color of the chart entries
-        if(100 == percent){
-            dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
-        } else {
-            dataSet.setColor(Color.RED);
-        }
+
+        dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
 
         // Displaying the chart data
         PieData data = new PieData(dataSet);
