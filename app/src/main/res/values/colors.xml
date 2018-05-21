@@ -4,8 +4,12 @@
     <color name="colorPrimaryDark">#1A2732</color>
     <color name="colorAccent">#38668C</color>
     <color name="button">#44525D</color>
+    <color name="icon_red">#dc3b56</color>
+    <color name="icon_blue">#2087a9</color>
+    <color name="icon_orange">#da7b09</color>
+    <color name="icon_green">#3AC787</color>
     <color name="red">#FF0000</color>
     <color name="green">#00FF00</color>
     <color name="black">#000</color>
-    <color name="white">#fff</color>
+    <color name="white">#f1eeee</color>
 </resources>

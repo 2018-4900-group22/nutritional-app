@@ -2,8 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ca.infostages.infonut">
 
-    <uses-permission android:name="android.permission.INTERNET" />
-
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
 
@@ -17,30 +15,43 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity"
-                  android:label="Infosessions">
+        <activity
+            android:name=".Home"
+            android:label="Infosession">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".LoginActivity"
-                  android:label="Log in"/>
-        <activity android:name=".DashboardActivity"
-                  android:label="u wot m8"/>
-        <activity android:name=".BarcodeReader"
-                  android:label="Results"/>
-        <activity android:name=".BarcodeCaptureActivity"
-                  android:label="Scan an item"/>
-        <activity android:name=".RegisterActivity"
-                  android:label="Sign Up"/>
-        <activity android:name=".Home"
-                  android:label="Dashboard"/>
-        <activity android:name=".NewUser"
-                  android:label="Welcome"/>
-        <activity android:name=".Statistics"
-                  android:label="Details"/>
+        <activity
+            android:name=".MainActivity"
+            android:label="Infosessions" />
+        <activity
+            android:name=".LoginActivity"
+            android:label="Log in" />
+        <activity
+            android:name=".BarcodeReader"
+            android:label="Results"
+            android:parentActivityName=".Home" />
+        <activity
+            android:name=".BarcodeCaptureActivity"
+            android:label="Scan an item" />
+        <activity
+            android:name=".RegisterActivity"
+            android:label="Sign Up" />
+        <activity
+            android:name=".NewUserActivity"
+            android:label="Welcome"
+            android:theme="@style/AppTheme" />
+        <activity
+            android:name=".StatisticsActivity"
+            android:label="Details" />
+        <activity
+            android:name=".MakePlanActivity"
+            android:label="@string/make_plan_activity"
+            android:parentActivityName=".Home" />
+        <activity android:name=".NewUser2Activity" />
     </application>
 
 </manifest>

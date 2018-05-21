@@ -14,7 +14,13 @@ public class Plan {
 
     public Plan() {}
 
-    public Plan(String planTitle, HashMap<String, Double> nutrients, HashMap<String, Double> ingredients) {
+    public Plan(String planTitle, HashMap<String, Double> nutrients) {
+        setPlanTitle(planTitle);
+        setNutrients(nutrients);
+    }
+
+    public Plan(String planTitle, HashMap<String, Double> nutrients,
+                HashMap<String, Double> ingredients) {
         setPlanTitle(planTitle);
         setNutrients(nutrients);
         setIngredients(ingredients);

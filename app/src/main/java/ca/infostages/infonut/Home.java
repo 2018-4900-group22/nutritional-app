@@ -1,25 +1,17 @@
 package ca.infostages.infonut;
 
-import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 
-import com.google.android.gms.auth.api.Auth;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -31,41 +23,14 @@ import com.google.firebase.database.ValueEventListener;
 /**
  * Represents the container of all user navigation related tasks.
  */
-public class Home extends AppCompatActivity implements NutrientDialogFragment.NutrientDialogListener{
+public class Home extends AppCompatActivity {
 
     private View view2;
     private FirebaseAuth mAuth;
-    GoogleApiClient mGoogleApiClient;
-    GoogleSignInClient mGoogleSignInClient;
-    FirebaseUser currentUser;
+    private FirebaseUser currentUser;
+    private Toolbar toolbar;
 
-    private static final String TAG_NUTRIENT_DIALOG = "NUTRIENT_DIALOG";
     private static final String TAG = "Home.java";
-
-    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = new BottomNavigationView.OnNavigationItemSelectedListener() {
-
-        @Override
-        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            Intent intent;
-            switch (item.getItemId()) {
-                case R.id.navigation_home:
-                    return loadFragment(HomeFragment.newInstance());
-                case R.id.navigation_camera:
-                    intent = new Intent(Home.this, BarcodeReader.class);
-                    startActivity(intent);
-                    return true;
-                case R.id.navigation_plans:
-                    Intent intent4 = new Intent(Home.this, Statistics.class);
-                    startActivity(intent4);
-                    return true;
-                case R.id.navigation_settings:
-                    loadFragment(Results.newInstance());
-                    return true;
-            }
-            return false;
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,87 +45,92 @@ public class Home extends AppCompatActivity implements NutrientDialogFragment.Nu
 
         mAuth = FirebaseAuth.getInstance();
 
-        //Google Sign-in
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))
-                .requestEmail()
-                .build();
+//        toolbar = findViewById(R.id.toolbarId);
+//
+//        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                onBackPressed();
+//            }
+//        });
 
-        // Build a GoogleSignInClient with the options specified by gso.
-        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-
-        //Checks if user's demographics are entered in. If not, send to NewUserActivity.
+        //Add back navigation in the title bar
+        if (getSupportActionBar() != null)
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        //Checks if the user is logged in. If not, send to Mainactivity.
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        DatabaseReference planReference;
-        planReference = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("plan");
-        planReference.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                String plan = dataSnapshot.getValue().toString();
-                if (plan.equals("false")) {
-                    Intent intent = new Intent (Home.this, NewUser.class);
-                    startActivity(intent);
-                } else {
-                    loadFragment(HomeFragment.newInstance());
+        if(currentUser == null) {
+            Intent intent = new Intent(Home.this, MainActivity.class);
+            startActivity(intent);
+        } else {
+            //Checks if user's demographics are entered in. If not, send to NewUserActivity.
+            DatabaseReference planReference;
+            planReference = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("plan");
+            planReference.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    String plan = dataSnapshot.getValue().toString();
+                    if (plan.equals("false")) {
+                        Intent intent = new Intent (Home.this, NewUserActivity.class);
+                        startActivity(intent);
+                    }
                 }
-            }
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                Log.d(TAG, ": " + databaseError.getMessage());
-            }
-        });
-
-        BottomNavigationView navigation = findViewById(R.id.navigation);
-        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                    Log.d(TAG, ": " + databaseError.getMessage());
+                }
+            });
+        }
     }
 
-    public void newUser(View view) {
-        Intent intent = new Intent (Home.this, NewUser.class);
+    /**
+     * This will take the user back to the previous activity
+     * @param item what button is being selected
+     * @return super.onOptionsItemSelected(item)
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            //Title bar back press triggers onBackPressed()
+            onBackPressed();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    //Both navigation bar back press and title bar back press will trigger this method
+    @Override
+    public void onBackPressed() {
+        if (getFragmentManager().getBackStackEntryCount() > 0 ) {
+            getFragmentManager().popBackStack();
+        }
+        else {
+            super.onBackPressed();
+        }
+    }
+
+    /**
+     * Opens the MakePlanActivity upon button press from the ChoosePlanFragment
+     * @param view - view
+     */
+    public void makePlan(View view) {
+        Intent intent = new Intent(Home.this, MakePlanActivity.class);
         startActivity(intent);
     }
 
     /**
      * Replaces the content of the current fragment with a new one.
      * @param fragment - a fragment that has been selected through the bottom navigation.
-     * @return a boolean indicating success or failure.
      */
-    private boolean loadFragment(Fragment fragment) {
+    private void loadFragment(Fragment fragment) {
         if (fragment != null) {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, fragment)
-                    .commit();
-            return true;
+                    .commitAllowingStateLoss();
         }
-        return false;
     }
 
-    /**
-     * Opens the MakePlanFragment upon button press from the ChoosePlanFragment
-     * @param view - view
-     */
-    public void makePlan(View view) {
-        loadFragment(MakePlanFragment.newInstance());
-    }
-
-    /**
-     * Shows a dialog which has a list of available nutrients that users can pick from.
-     * @param view - view
-     */
-    public void addNutrientOrIngredient(View view) {
-        DialogFragment dialogFragment = new NutrientDialogFragment();
-        dialogFragment.show(getSupportFragmentManager(), TAG_NUTRIENT_DIALOG);
-    }
-
-    @Override
-    public void onDialogPositiveClick(DialogFragment dialogFragment) {
-        //
-    }
-
-    @Override
-    public void onDialogNegativeClick(DialogFragment dialogFragment) {
-        //
-    }
     public void redButton(View view)
     {
         view2.setBackgroundResource(R.color.red);
@@ -168,34 +138,5 @@ public class Home extends AppCompatActivity implements NutrientDialogFragment.Nu
     public void greenButton(View view)
     {
         view2.setBackgroundResource(R.color.green);
-    }
-
-    public void something(View view){
-        mAuth.signOut();
-        if (mGoogleApiClient.isConnected()) {
-            mGoogleApiClient.disconnect();
-
-            //Open other activity
-            Intent intent = new Intent(Home.this, MainActivity.class);
-            startActivity(intent);
-            finish();
-        }
-    }
-
-    //This is still broken! 
-    public void signOut(View view) {
-        FirebaseAuth.getInstance().signOut();
-        Intent intent = new Intent(Home.this, MainActivity.class);
-        startActivity(intent);
-
-        // Google revoke access
-        mGoogleSignInClient.revokeAccess().addOnCompleteListener(this,
-                new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        Intent intent = new Intent(Home.this, MainActivity.class);
-                        startActivity(intent);
-                    }
-                });
     }
 }
