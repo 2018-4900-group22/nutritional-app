@@ -2,13 +2,14 @@ package ca.infostages.infonut;
 
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.LightingColorFilter;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Legend;
@@ -28,13 +29,14 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 public class StatisticsActivity extends AppCompatActivity {
     //define a piechart
     private PieChart mChart;
 
     //define all the buttons
-    private Button fat;
+    /*private Button fat;
     private Button goodFat;
     private Button badFat;
     private Button cholesterol;
@@ -47,7 +49,7 @@ public class StatisticsActivity extends AppCompatActivity {
     private Button vitaminC;
     private Button calcium;
     private Button iron;
-    private Button calories;
+    private Button calories;*/
 
     //default plans
     private Long default_bad_fats = 0l;
@@ -64,6 +66,9 @@ public class StatisticsActivity extends AppCompatActivity {
     private Long default_vitamin_A = 0l;
     private Long default_vitamin_C = 0l;
 
+    private ListView nutrientListView;
+    private ArrayAdapter<String> spinnerAdapter;
+
     String selected_plan = "";
 
     String label;
@@ -71,6 +76,9 @@ public class StatisticsActivity extends AppCompatActivity {
     double intake = 100;
     int percent = 0;
     int full = 100;
+
+    private int like_items;
+    private double portion;
 
     FirebaseUser currentUser;
     private static final String TAG = "StatisticsActivity.java";
@@ -81,8 +89,9 @@ public class StatisticsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_statistics);
 
         mChart = (PieChart) findViewById(R.id.pie);
+        nutrientListView = findViewById(R.id.nutrient_list_view);
 
-        fat = findViewById(R.id.fat);
+        /*fat = findViewById(R.id.fat);
         goodFat = findViewById(R.id.saturatedFat);
         badFat = findViewById(R.id.transFat);
         cholesterol = findViewById(R.id.cholesterol);
@@ -95,14 +104,17 @@ public class StatisticsActivity extends AppCompatActivity {
         vitaminC = findViewById(R.id.vitaminC);
         calcium = findViewById(R.id.calcium);
         iron = findViewById(R.id.iron);
-        calories = findViewById(R.id.calories);
-
-
-        final HashMap<String, Double> hashmap = NutritionData.nutritionHashMap;
+        calories = findViewById(R.id.calories);*/
 
         Legend legend = mChart.getLegend();
         legend.setTextSize(12f);
         legend.setTextColor(Color.WHITE);
+        legend.setFormSize(10f);
+
+        like_items = BarcodeReader.likeItemsProgress;
+        portion = BarcodeReader.portionsize;
+
+        final HashMap<String, Double> hashmap = NutritionData.nutritionHashMap;
 
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if(currentUser == null) {
@@ -123,6 +135,7 @@ public class StatisticsActivity extends AppCompatActivity {
                     } else {
                         selected_plan = dataSnapshot.child("selected_plan").getValue(String.class);
                         System.out.println("Selected Plan123: " + selected_plan);
+                        populateSpinner();
                         planChecker(selected_plan);
                     }
                 }
@@ -133,28 +146,41 @@ public class StatisticsActivity extends AppCompatActivity {
                 }
             });
 //            // entry label styling
-//            mChart.setEntryLabelColor(Color.WHITE);
-//            mChart.setEntryLabelTextSize(12f);
+            mChart.setEntryLabelColor(Color.WHITE);
+            mChart.setEntryLabelTextSize(12f);
         }
 
         System.out.println("Selected Plan456: " + selected_plan);
 
+
+
         final boolean checkedServing = getIntent().getBooleanExtra("servingChecked", true);
         final double servingAmount = getIntent().getDoubleExtra("100Portion", 100);
+        populateSpinner();
+
+        //System.out.println("CheckedServing: " + checkedServing);
+        System.out.println("CheckedAmount:" + servingAmount);
+
         mChart.setUsePercentValues(true);
         mChart.getDescription().setEnabled(false);
 
         List<PieEntry> pieEntries = new ArrayList<>();
-
-        pieEntries.add(new PieEntry(95, "Intake"));
-        pieEntries.add(new PieEntry(5, "Test"));
+//        pieEntries.add(new PieEntry(95, "Intake"));
+//        pieEntries.add(new PieEntry(5, "Test"));
+        // The name of the chart
         PieDataSet dataSet = new PieDataSet(pieEntries, label);
 
         //Enable Back button
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
 
         // Color of the chart entries
-        dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
+        if(100 == percent) {
+            dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
+        } else {
+            dataSet.setColor(Color.RED);
+        }
 
         // Displaying the chart data
         PieData data = new PieData(dataSet);
@@ -162,13 +188,204 @@ public class StatisticsActivity extends AppCompatActivity {
         mChart.animateY(1000); // Animation for the chart
         mChart.invalidate(); // refresh
 
+        nutrientListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String value = nutrientListView.getItemAtPosition(position).toString();
+                if (value.equalsIgnoreCase("fat")) {
+                    label = "Fat";
+                    if(checkedServing) {
+                        nutrientValue = hashmap.get("fat");
+                    } else {
+                        nutrientValue = hashmap.get("fat_100");
+                        nutrientValue = consumptionManip(nutrientValue, servingAmount, intake, like_items, portion);
+                    }
+                    intake = default_bad_fats;
+                    System.out.println("Nut value: "+ nutrientValue);
+                    valueConverter(nutrientValue, intake);
+                    chartSetting();
+                    createChart();
+                } else if (value.equalsIgnoreCase("good_fats")) {
+                    if(checkedServing) {
+                        nutrientValue = hashmap.get("goodFat");
+                    } else {
+                        nutrientValue = hashmap.get("goodFat_100");
+                        nutrientValue = consumptionManip(nutrientValue, servingAmount, intake, like_items, portion);
+                    }
+                    intake = default_good_fats;
+                    label = "Good Fat";
+                    System.out.println("Nut value: "+ nutrientValue);
+                    valueConverter(nutrientValue, intake);
+                    chartSetting();
+                    createChart();
+                } else if (value.equalsIgnoreCase("bad_fats")) {
+                    if(checkedServing) {
+                        nutrientValue = hashmap.get("badFat");
+                    } else {
+                        nutrientValue = hashmap.get("badFat_100");
+                        nutrientValue = consumptionManip(nutrientValue, servingAmount, intake, like_items, portion);
+                    }
+                    intake = default_bad_fats;
+                    label = "Bad Fat";
+                    System.out.println("Nut value: "+ nutrientValue);
+                    valueConverter(nutrientValue, intake);
+                    chartSetting();
+                    createChart();
+                } else if (value.equalsIgnoreCase("cholesterol")) {
+                    label = "Cholesterol";
+                    if(checkedServing) {
+                        nutrientValue = hashmap.get("cholesterol");
+                    } else {
+                        nutrientValue = hashmap.get("cholesterol_100");
+                        nutrientValue = consumptionManip(nutrientValue, servingAmount, intake, like_items, portion);
+                    }
+                    intake = default_cholesterol;
+                    System.out.println("Nut value: "+ nutrientValue);
+                    valueConverter(nutrientValue, intake);
+                    chartSetting();
+                } else if (value.equalsIgnoreCase("sodium")) {
+                    label = "Sodium";
+                    if(checkedServing) {
+                        nutrientValue = hashmap.get("sodium");
+                    } else {
+                        nutrientValue = hashmap.get("sodium_100");
+                        nutrientValue = consumptionManip(nutrientValue, servingAmount, intake, like_items, portion);
+                    }
+                    intake = default_sodium;
+                    System.out.println("Nut value: "+ nutrientValue);
+                    valueConverter(nutrientValue, intake);
+                    chartSetting();
+                    createChart();
+                } else if (value.equalsIgnoreCase("carbohydrates")) {
+                    label = "Carbohydrate";
+                    if(checkedServing) {
+                        nutrientValue = hashmap.get("carbohydrate");
+                    } else {
+                        nutrientValue = hashmap.get("carbohydrate_100");
+                        nutrientValue = consumptionManip(nutrientValue, servingAmount, intake, like_items, portion);
+                    }
+                    intake = default_carbohydrates;
+                    System.out.println("Nut value: "+ nutrientValue);
+                    valueConverter(nutrientValue, intake);
+                    chartSetting();
+                    createChart();
+                } else if (value.equalsIgnoreCase("fibre")) {
+                    label = "Fibre";
+                    if(checkedServing) {
+                        nutrientValue = hashmap.get("fibre");
+                    } else {
+                        nutrientValue = hashmap.get("fibre_100");
+                        nutrientValue = consumptionManip(nutrientValue, servingAmount, intake, like_items, portion);
+                    }
+                    intake = default_fibre;
+                    System.out.println("Nut value: "+ nutrientValue);
+                    valueConverter(nutrientValue, intake);
+                    chartSetting();
+                    createChart();
+                } else if (value.equalsIgnoreCase("potassium")) {
+                    label = "Potassium";
+                    if(checkedServing) {
+                        nutrientValue = hashmap.get("potassium");
+                    } else {
+                        nutrientValue = hashmap.get("potassium_100");
+                        nutrientValue = consumptionManip(nutrientValue, servingAmount, intake, like_items, portion);
+                    }
+                    intake = default_potassium;
+                    System.out.println("Nut value: "+ nutrientValue);
+                    valueConverter(nutrientValue, intake);
+                    chartSetting();
+                    createChart();
+                } else if (value.equalsIgnoreCase("protein")) {
+                    label = "Protein";
+                    if(checkedServing) {
+                        nutrientValue = hashmap.get("protein");
+                    } else {
+                        nutrientValue = hashmap.get("protein_100");
+                        nutrientValue = consumptionManip(nutrientValue, servingAmount, intake, like_items, portion);
+                    }
+                    intake = default_protein;
+                    System.out.println("Nut value: "+ nutrientValue);
+                    valueConverter(nutrientValue, intake);
+                    chartSetting();
+                    createChart();
+                } else if (value.equalsIgnoreCase("vitamin_a")) {
+                    label = "Vitamin A";
+                    if(checkedServing) {
+                        nutrientValue = hashmap.get("vitaminA");
+                    } else {
+                        nutrientValue = hashmap.get("vitaminA_100");
+                        nutrientValue = consumptionManip(nutrientValue, servingAmount, intake, like_items, portion);
+                    }
+                    intake = default_vitamin_A;
+                    System.out.println("Nut value: "+ nutrientValue);
+                    valueConverter(nutrientValue, intake);
+                    chartSetting();
+                    createChart();
+                } else if (value.equalsIgnoreCase("vitamin_c")) {
+                    label = "Vitamin C";
+                    if(checkedServing) {
+                        nutrientValue = hashmap.get("vitaminC");
+                    } else {
+                        nutrientValue = hashmap.get("vitaminC_100");
+                        nutrientValue = consumptionManip(nutrientValue, servingAmount, intake, like_items, portion);
+                    }
+                    intake = default_vitamin_C;
+                    System.out.println("Nut value: "+ nutrientValue);
+                    valueConverter(nutrientValue, intake);
+                    chartSetting();
+                    createChart();
+                } else if (value.equalsIgnoreCase("calcium")) {
+                    label = "Calcium";
+                    if(checkedServing) {
+                        nutrientValue = hashmap.get("calcium");
+                    } else {
+                        nutrientValue = hashmap.get("calcium_100");
+                        nutrientValue = consumptionManip(nutrientValue, servingAmount, intake, like_items, portion);
+                    }
+                    intake = default_calcium;
+                    System.out.println("Nut value: "+ nutrientValue);
+                    valueConverter(nutrientValue, intake);
+                    chartSetting();
+                    createChart();
+                } else if (value.equalsIgnoreCase("iron")) {
+                    label = "Iron";
+                    if(checkedServing) {
+                        nutrientValue = hashmap.get("iron");
+                    } else {
+                        nutrientValue = hashmap.get("iron_100");
+                        nutrientValue = consumptionManip(nutrientValue, servingAmount, intake, like_items, portion);
+
+                    }
+                    intake = default_iron;
+                    System.out.println("Nut value: "+ nutrientValue);
+                    valueConverter(nutrientValue, intake);
+                    chartSetting();
+                    createChart();
+                } else if (value.equalsIgnoreCase("calories")) {
+                    label = "Calories";
+                    if(checkedServing) {
+                        nutrientValue = hashmap.get("calories");
+                    } else {
+                        nutrientValue = hashmap.get("calories_100");
+                        nutrientValue = consumptionManip(nutrientValue, servingAmount, intake, like_items, portion);
+
+                    }
+                    intake = default_iron;
+                    System.out.println("Nut value: "+ nutrientValue);
+                    valueConverter(nutrientValue, intake);
+                    chartSetting();
+                    createChart();
+                }
+            }
+        });
+
         /**
          * Buttons assigning starts here.
          * Calories is just a placeholder; due to the API not
          * supporting calories.
          */
 
-        calories.setOnClickListener(new View.OnClickListener() {
+        /*calories.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 //Current API does not include calories.
@@ -452,16 +669,99 @@ public class StatisticsActivity extends AppCompatActivity {
                 iron.getBackground().setColorFilter(new LightingColorFilter(0xFFFFFFFF, 0xFFAA0000));
                 iron.setTextColor(getApplication().getResources().getColor(R.color.black));
             }
-        });
+        });*/
 
         //
+    }
 
+    /**
+     * Replaces all spaces with underscores and changes the case to lowercase.
+     * @param title - the title of the plan.
+     * @return a string that has been converted to lowercase with spaces replaced.
+     */
+    private String normalizePlanKey(String title) {
+        return title.replaceAll("\\s+", "_").toLowerCase();
+    }
+
+    /**
+     * Populates the spinner with keys from plans in the database.
+     */
+    private void populateSpinner() {
+        // Check if default plan is selected or not.
+        String planKey = normalizePlanKey(selected_plan);
+        ArrayList<String> nutrientArrayList = new ArrayList<>();
+        spinnerAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_list_item_1, nutrientArrayList);
+        if (!planKey.equalsIgnoreCase("default_plan")) {
+            customPlanPopulate(nutrientArrayList);
+        } else {
+            defaultPlanPopulate(nutrientArrayList);
+        }
+        nutrientListView.setAdapter(spinnerAdapter);
+    }
+
+    /**
+     * Populates a list with keys retrieved from the default plan in the database.
+     */
+    private void defaultPlanPopulate(final ArrayList<String> spinnerList) {
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference()
+                .child("users")
+                .child(currentUser.getUid()).child("plan").child("default_plan");
+        reference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    if (!snapshot.getKey().equalsIgnoreCase("planTitle")) {
+                        spinnerList.add(snapshot.getKey());
+                    }
+                }
+                spinnerAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.wtf(TAG, databaseError.getDetails());
+            }
+        });
+    }
+
+    /**
+     * Populates list with only valid keys from a custom plan.
+     */
+    private void customPlanPopulate(final ArrayList<String> spinnerArray) {
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("users")
+                .child(currentUser.getUid()).child("plan");
+        reference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    String title = (String) snapshot.child("planTitle").getValue();
+                    if (!title.equalsIgnoreCase("default plan")) {
+                        if (selected_plan.equalsIgnoreCase(title)) {
+                            Plan plan = snapshot.getValue(Plan.class);
+                            HashMap<String, Double> planNutrients = Objects.requireNonNull(plan).getNutrients();
+                            for (String key : planNutrients.keySet()) {
+                                if (planNutrients.get(key) > 0) {
+                                    spinnerArray.add(key);
+                                }
+                            }
+                            spinnerAdapter.notifyDataSetChanged();
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.wtf(TAG, databaseError.getDetails());
+            }
+        });
     }
 
     /**
      * Changes the background and text color of all the buttons
      */
-    private void buttonChange(){
+    /*private void buttonChange(){
         iron.getBackground().clearColorFilter();
         iron.setTextColor(getResources().getColor(R.color.white));
         fat.getBackground().clearColorFilter();
@@ -488,18 +788,23 @@ public class StatisticsActivity extends AppCompatActivity {
         vitaminC.setTextColor(getResources().getColor(R.color.white));
         calcium.getBackground().clearColorFilter();
         calcium.setTextColor(getResources().getColor(R.color.white));
-    }
+    }*/
 
     private void createChart() {
         List<PieEntry> pieEntries = new ArrayList<>();
 
-        pieEntries.add(new PieEntry(full, "Intake"));
-        pieEntries.add(new PieEntry(percent, label));
+        if(intake == 0) {
+            pieEntries.add(new PieEntry(100, label));
+        } else {
+            pieEntries.add(new PieEntry(full, "Intake"));
+            pieEntries.add(new PieEntry(percent, label));
+        }
 
         // The name of the chart
         PieDataSet dataSet = new PieDataSet(pieEntries, label);
 
-        dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
+        // Color of the chart entries
+            dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
 
         // Displaying the chart data
         PieData data = new PieData(dataSet);
@@ -508,10 +813,7 @@ public class StatisticsActivity extends AppCompatActivity {
         mChart.invalidate(); // refresh
     }
 
-    private void valueConverter(double value, double remain) {
-        percent = (int) (value/remain*100);
-        full = 100 - percent;
-    }
+
 
     /**
      * This will take the user back to the previous activity
@@ -539,22 +841,29 @@ public class StatisticsActivity extends AppCompatActivity {
         }
     }
 
-    private double consumptionManip(double nutrition, double amount) {
-        return amount/100 *nutrition;
+    private double consumptionManip(double nutrition, double amount, double intake, int like, double portion) {
+        double product = nutrition * amount * portion;
+        product *= like;
+        product /= intake;
+        return product;
+    }
+
+    private void valueConverter(double value, double remain) {
+        percent = (int) (value/remain*100);
+        full = 100 - percent;
     }
 
     private void planChecker(final String plan) {
         System.out.println("PLAN NAME: " + plan);
 
         final String newPlan = plan.toLowerCase();
-        if(!plan.equals("default_plan")) {
+        if(!plan.equals("default plan")) {
             DatabaseReference planReference;
 
             planReference = FirebaseDatabase.getInstance().getReference().child("users").child(currentUser.getUid()).child("plan").child(newPlan).child("nutrients");
             planReference.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    System.out.println("CURRENTLY IN:" + newPlan);
                     default_bad_fats = dataSnapshot.child("bad_fats").getValue(Long.class);
                     default_calcium = dataSnapshot.child("calcium").getValue(Long.class);
                     default_calories = dataSnapshot.child("calories").getValue(Long.class);
@@ -607,16 +916,18 @@ public class StatisticsActivity extends AppCompatActivity {
                 }
             });
         }
-
     }
 
     public void chartSetting(){
         // entry label styling
         mChart.setEntryLabelColor(Color.WHITE);
         mChart.setEntryLabelTextSize(12f);
-        mChart.setCenterText(percent + "%" );
+        if(percent <= 100) {
+            mChart.setCenterText(percent + "%");
+        } else {
+            mChart.setCenterText("Warning Exceeded Intake\n" + percent + "%");
+        }
         mChart.setCenterTextSize(14f);
         mChart.setCenterTextColor(Color.BLUE);
     }
-
 }
