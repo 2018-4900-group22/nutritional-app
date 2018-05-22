@@ -26,17 +26,19 @@ public class BarcodeReader extends AppCompatActivity implements View.OnClickList
     private Toolbar toolbar;
     public static TextView statusMessage;
     private TextView barcodeValue;
-    public static double portionsize;
+    public static double portionsize = 1.0;
     private static final int RC_BARCODE_CAPTURE = 9001;
     private static final String TAG = "BarcodeMain";
     private static SeekBar seek_bar;
     private static Button sendResults;
+    private static SeekBar like_items;
     private Switch switchServing;
     private Switch switch100;
     private Button showResult;
     private String result;
     final Context c = this;
     private Button results;
+    public static int likeItemsProgress = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,14 +52,6 @@ public class BarcodeReader extends AppCompatActivity implements View.OnClickList
         statusMessage = (TextView)findViewById(R.id.status_message);
         barcodeValue = (TextView)findViewById(R.id.barcode_value);
 
-/*        toolbar = findViewById(R.id.toolbarId2);
-
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                onBackPressed();
-            }
-        });*/
 
         findViewById(R.id.read_barcode).setOnClickListener(this);
         Intent intent = new Intent(this, BarcodeCaptureActivity.class);
@@ -68,13 +62,13 @@ public class BarcodeReader extends AppCompatActivity implements View.OnClickList
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(BarcodeReader.this, StatisticsActivity.class);
+                System.out.println("CheckedServing br: " + switchServing.isChecked());
                 intent.putExtra("servingChecked", switchServing.isChecked());
                 intent.putExtra("100Checked", switch100.isChecked());
                 intent.putExtra("100Portion", result);
                 intent.putExtra("sliderPortion", portionsize);
+                intent.putExtra("likeItem", likeItemsProgress);
                 startActivity(intent);
-                Intent intent2 = new Intent(BarcodeReader.this, StatisticsActivity.class);
-                startActivity(intent2);
             }
         });
 
@@ -138,6 +132,7 @@ public class BarcodeReader extends AppCompatActivity implements View.OnClickList
     public void onClick(View v) {
         if (v.getId() == R.id.read_barcode) {
             // launch barcode activity.
+
             Intent intent = new Intent(this, BarcodeCaptureActivity.class);
             startActivityForResult(intent, RC_BARCODE_CAPTURE);
         }
@@ -175,6 +170,7 @@ public class BarcodeReader extends AppCompatActivity implements View.OnClickList
      */
     public void seekbar() {
         seek_bar = (SeekBar) findViewById(R.id.seekBar);
+        like_items = (SeekBar) findViewById(R.id.likeItemsSeek);
         seek_bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override
@@ -188,6 +184,23 @@ public class BarcodeReader extends AppCompatActivity implements View.OnClickList
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+
+        like_items.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                likeItemsProgress = progress + 1;
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
             }
         });
     }
