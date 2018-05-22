@@ -68,6 +68,7 @@ public class StatisticsActivity extends AppCompatActivity {
 
     private ListView nutrientListView;
     private ArrayAdapter<String> spinnerAdapter;
+    private PieDataSet dataSet;
 
     String selected_plan = "";
 
@@ -152,8 +153,6 @@ public class StatisticsActivity extends AppCompatActivity {
 
         System.out.println("Selected Plan456: " + selected_plan);
 
-
-
         final boolean checkedServing = getIntent().getBooleanExtra("servingChecked", true);
         final double servingAmount = getIntent().getDoubleExtra("100Portion", 100);
         populateSpinner();
@@ -165,22 +164,23 @@ public class StatisticsActivity extends AppCompatActivity {
         mChart.getDescription().setEnabled(false);
 
         List<PieEntry> pieEntries = new ArrayList<>();
-//        pieEntries.add(new PieEntry(95, "Intake"));
-//        pieEntries.add(new PieEntry(5, "Test"));
+
         // The name of the chart
-        PieDataSet dataSet = new PieDataSet(pieEntries, label);
+         dataSet = new PieDataSet(pieEntries, label);
 
         //Enable Back button
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
-        // Color of the chart entries
-        if(100 == percent) {
-            dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
-        } else {
+        // Color of the chart entries// //
+/*        if(100 == percent) {
             dataSet.setColor(Color.RED);
-        }
+        } else {
+            dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
+        }*/
+
+        dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
 
         // Displaying the chart data
         PieData data = new PieData(dataSet);
@@ -800,20 +800,18 @@ public class StatisticsActivity extends AppCompatActivity {
             pieEntries.add(new PieEntry(percent, label));
         }
 
-        // The name of the chart
-        PieDataSet dataSet = new PieDataSet(pieEntries, label);
-
         // Color of the chart entries
-            dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
+        dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
+
+        dataSet = new PieDataSet(pieEntries, label);
 
         // Displaying the chart data
         PieData data = new PieData(dataSet);
+        dataSet.setDrawValues(false);
         mChart.setData(data);
         mChart.animateY(1000); // Animation for the chart
         mChart.invalidate(); // refresh
     }
-
-
 
     /**
      * This will take the user back to the previous activity
