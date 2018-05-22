@@ -52,6 +52,7 @@ public class StatisticsActivity extends AppCompatActivity {
 
     private ListView nutrientListView;
     private ArrayAdapter<String> spinnerAdapter;
+    private PieDataSet dataSet;
 
     String selected_plan = "";
 
@@ -114,6 +115,7 @@ public class StatisticsActivity extends AppCompatActivity {
             mChart.setEntryLabelColor(Color.WHITE);
             mChart.setEntryLabelTextSize(12f);
         }
+        System.out.println("Selected Plan456: " + selected_plan);
 
         final boolean checkedServing = getIntent().getBooleanExtra("servingChecked", true);
         final double servingAmount = getIntent().getDoubleExtra("100Portion", 100);
@@ -124,24 +126,26 @@ public class StatisticsActivity extends AppCompatActivity {
 
         mChart.setUsePercentValues(true);
         mChart.getDescription().setEnabled(false);
+        mChart.getLegend().setEnabled(false);
 
         List<PieEntry> pieEntries = new ArrayList<>();
 
         // The name of the chart
-        PieDataSet dataSet = new PieDataSet(pieEntries, label);
+        dataSet = new PieDataSet(pieEntries, label);
 
         //Enable Back button
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
-        // Color of the chart entries
-        if(100 == percent) {
-            dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
-        } else {
+        // Color of the chart entries// //
+/*        if(100 == percent) {
             dataSet.setColor(Color.RED);
-        }
+        } else {
+            dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
+        }*/
 
+        //dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
 
         // Displaying the chart data
         PieData data = new PieData(dataSet);
@@ -203,6 +207,7 @@ public class StatisticsActivity extends AppCompatActivity {
                     intake = default_cholesterol;
                     valueConverter(nutrientValue, intake);
                     chartSetting();
+                    createChart();
                 } else if (value.equalsIgnoreCase("sodium")) {
                     label = "Sodium";
                     if(checkedServing) {
@@ -423,34 +428,29 @@ public class StatisticsActivity extends AppCompatActivity {
 
     private void createChart() {
         List<PieEntry> pieEntries = new ArrayList<>();
+        dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
 
         // The name of the chart
-        PieDataSet dataSet = new PieDataSet(pieEntries, label);
-
-        // Color array for the pie chart
-        final int[] MY_COLORS = {Color.rgb(255,0,0), Color.rgb(255,0,0)};
-        ArrayList<Integer> colors = new ArrayList<Integer>();
-
-        for(int c: MY_COLORS) colors.add(c);
+        //PieDataSet dataSet = new PieDataSet(pieEntries, label);
 
         if(intake == 0) {
             pieEntries.add(new PieEntry(100, label));
-            dataSet.setColors(colors);
+
         } else {
             pieEntries.add(new PieEntry(full, "Intake"));
             pieEntries.add(new PieEntry(percent, label));
-            // Color of the chart entries
-            dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
         }
+
+        dataSet = new PieDataSet(pieEntries, label);
+        dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
 
         // Displaying the chart data
         PieData data = new PieData(dataSet);
+        dataSet.setDrawValues(false);
         mChart.setData(data);
         mChart.animateY(1000); // Animation for the chart
         mChart.invalidate(); // refresh
     }
-
-
 
     /**
      * This will take the user back to the previous activity
@@ -582,10 +582,17 @@ public class StatisticsActivity extends AppCompatActivity {
         // entry label styling
         mChart.setEntryLabelColor(Color.WHITE);
         mChart.setEntryLabelTextSize(12f);
+        // Color array for the pie chart
+        final int[] MY_COLORS = {Color.rgb(255,0,0), Color.rgb(255,0,0)};
+        ArrayList<Integer> colors = new ArrayList<Integer>();
+
+        for(int c: MY_COLORS) colors.add(c);
         if(percent <= 100) {
             mChart.setCenterText(percent + "%");
+            dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
         } else {
             mChart.setCenterText("Warning Exceeded Intake\n" + percent + "%");
+            dataSet.setColors(colors);
         }
         mChart.setCenterTextSize(14f);
         mChart.setCenterTextColor(Color.BLUE);
