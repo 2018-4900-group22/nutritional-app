@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "670862545574-ufgqhnr26si090dsaq30kodg3r01enml.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ca.infostages.infonut",
+            "certificate_hash": "c49aad00240f46522c416047cdb8315f0775cf06"
+          }
+        },
+        {
           "client_id": "670862545574-s5el4begqethn1dt1eoc1jgadcnmg1kc.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
